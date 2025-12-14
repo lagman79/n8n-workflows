@@ -1,0 +1,308 @@
+{
+  "name": "Smart Email Categorizer",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1664,
+        -240
+      ],
+      "id": "ac440b5b-b55c-4ad1-a138-094553feb97e",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      subject: \"Πρόβλημα με την παραγγελία #12345\",\n      body: \"Παρέλαβα το προϊόν σπασμένο....\",\n      from: \"customer@example.com\"\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1456,
+        -240
+      ],
+      "id": "8a5f5dc0-b942-40ba-9d2b-adff027d16ab",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Ανάλυσε το παρακάτω email.\nEmail Body: {{ $json.body }}\n\nΘέλω να βγάλεις δύο συμπεράσματα:\n1. Category (Επίλεξε ΑΚΡΙΒΩΣ ένα από αυτά: Invoice, Complaint, Sales, Other)\n2. Sentiment (Positive, Negative, Neutral)\n\nΑπάντησε ΜΟΝΟ σε μορφή JSON, χωρίς κανένα άλλο κείμενο. Παράδειγμα:\n{\n  \"category\": \"Complaint\",\n  \"sentiment\": \"Negative\"\n}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        -1248,
+        -240
+      ],
+      "id": "d2a77268-93fd-4579-8c31-5242f47a380f",
+      "name": "Message a model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "n1RsYdVpsECvCL1D",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Παίρνουμε το κείμενο από το σωστό σημείο (content -> parts -> text)\nconst aiText = items[0].json.content.parts[0].text;\n\n// Καθαρίζουμε τα σύμβολα ```json και ``` που βάζει το AI\nconst cleanText = aiText.replace(/```json/g, '').replace(/```/g, '').trim();\n\n// Μετατρέπουμε το κείμενο σε πραγματικά δεδομένα (JSON)\nconst parsedData = JSON.parse(cleanText);\n\nreturn [{\n  json: parsedData\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -896,
+        -240
+      ],
+      "id": "bb338599-7ee6-4e92-a676-e9f3bf9c894f",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.category }}",
+                    "rightValue": "Invoice",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "22c0010b-be9a-4253-b938-d402e546c6ac"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "49609e65-d2ba-4888-9ba8-7b684f03fb48",
+                    "leftValue": "={{ $json.category }}",
+                    "rightValue": "Complaint",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        -688,
+        -240
+      ],
+      "id": "998c523c-1334-41c6-a3e0-776de33b7af8",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "10tKMx55d-4sQwf5qVzfD1RRO-gjaVSxcPvG8f2ThsuM",
+          "mode": "list",
+          "cachedResultName": "n8n data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/10tKMx55d-4sQwf5qVzfD1RRO-gjaVSxcPvG8f2ThsuM/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Φύλλο1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/10tKMx55d-4sQwf5qVzfD1RRO-gjaVSxcPvG8f2ThsuM/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Category": "={{ $('Code in JavaScript1').item.json.category }}",
+            "Sentiment": "={{ $('Code in JavaScript1').item.json.sentiment }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Category",
+              "displayName": "Category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Sentiment",
+              "displayName": "Sentiment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -160,
+        -128
+      ],
+      "id": "425527c7-ad06-40ed-bd49-5930b18cd9ce",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Rt9vY0nkQu6Lcw7Q",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "manlagoudakis@gmail.com",
+        "subject": "Νέο Παράπονο",
+        "message": "=\"Έχουμε νέο παράπονο: {{ $json.category }}\".",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -256,
+        -400
+      ],
+      "id": "547ce63d-4f89-4552-8a1a-8c7becd19563",
+      "name": "Send a message",
+      "webhookId": "71ede32f-150d-4145-ad32-47f17081af30",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "YyqahLF1V8qbCf68",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "60c5121b-e665-4b61-bef0-eabf32d7825f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "e0f9431dcd9b0df5e2c17c66ebe9f0534510aeed23ed82c407ef1caee1a4cdb4"
+  },
+  "id": "sBL3vEJEoYt1JYxh",
+  "tags": []
+}
