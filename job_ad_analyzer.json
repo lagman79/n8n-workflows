@@ -1,0 +1,239 @@
+{
+  "name": "Job Posting Analyzer email",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "Resume",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        -16,
+        0
+      ],
+      "id": "90ec280d-5a59-4691-8dcc-93f01690be4f",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        192,
+        208
+      ],
+      "id": "5bd97109-be97-437d-b6fd-d2a080653fb3",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "OU3F3ISCxNi5xI9W",
+          "name": "Google Gemini(PaLM) Api account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "formTitle": "Resume Analyzer",
+        "formDescription": "1",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Job Description",
+              "fieldType": "textarea",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "extra_info",
+              "fieldType": "textarea",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Resume",
+              "fieldType": "file",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "=email",
+              "fieldType": "email",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "name",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.3,
+      "position": [
+        -208,
+        0
+      ],
+      "id": "50d98f18-e184-4819-beef-eeb2092775a1",
+      "name": "On form submission",
+      "webhookId": "15eeb2a5-3b68-4375-8416-333dfdfaf707"
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "completionTitle": "Η ανάλυση στάλθηκε!",
+        "completionMessage": "={{ $('Markdown').first().json.data }}\n\nΕλέγξτε το email σας ({{ $('On form submission').item.json.email }}). Η ανάλυση έχει σταλεί και εκεί για καλύτερη εμφάνιση και αποθήκευση.",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.3,
+      "position": [
+        896,
+        0
+      ],
+      "id": "8b59a18c-e00b-4b40-82c4-a34494dbf2e8",
+      "name": "Form1",
+      "webhookId": "22138908-7ec6-4d6f-ab9c-12cc618e6947"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Role: You are a Senior Technical Recruiter and Career Coach.\nTask: Analyze the fit between a candidate's CV and a specific Job Description.\n\nInput Data:\n- Candidate CV Text:\n{{ $json.text }}\n\n- Extra info for coandidate\n{{ $('On form submission').item.json.extra_info }}\n\n- Job Description:\n{{ $('On form submission').item.json[\"Job Description\"] }}\n\nInstructions:\nAnalyze the input deeply and provide a response in GREEK language formatted in Markdown.\nYour response must include:\n1. 🎯 **Ποσοστό Ταύτισης (Match Score):** A generic score (0-100%).\n2. ✅ **Δυνατά Σημεία:** Which required skills does the candidate possess?\n3. ⚠️ **Ελλείψεις (Missing Skills):** Critical requirements missing from the CV.\n4. 💡 **Συμβουλές Βελτίωσης:** 3 specific, actionable tips on how the candidate can change their CV to get an interview for THIS specific job.\n\nTone: Professional, encouraging, but honest.",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        192,
+        0
+      ],
+      "id": "a4e41960-0010-4fe6-b6b8-8639307c2f8f",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "mode": "markdownToHtml",
+        "markdown": "={{ $json.text }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.markdown",
+      "typeVersion": 1,
+      "position": [
+        480,
+        0
+      ],
+      "id": "a3354933-20a0-47dd-8154-b54eecf85b10",
+      "name": "Markdown"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('On form submission').item.json.email }}",
+        "subject": "=Ανάλυση Βιογραφικού - {{ $('On form submission').item.json.name }}",
+        "message": "={{ $json.data }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        688,
+        0
+      ],
+      "id": "56647dc1-2810-44c4-86a8-cf753103f8a3",
+      "name": "Send a message",
+      "webhookId": "0b308fe2-8228-4ce5-8339-0e61a9a2ae97",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "YyqahLF1V8qbCf68",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Markdown",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Markdown": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Form1": {
+      "main": [
+        []
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Form1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "133f1157-cedc-42ec-b2f8-02e2c1671a9a",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "e0f9431dcd9b0df5e2c17c66ebe9f0534510aeed23ed82c407ef1caee1a4cdb4"
+  },
+  "id": "M3k7TguD9B8QneKk",
+  "tags": []
+}

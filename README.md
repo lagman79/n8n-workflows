@@ -69,6 +69,39 @@ An automated workflow that aggregates news from multiple RSS feeds, filters them
 
 ---
 
+## 3. AI Resume Analyzer
+
+An automated workflow that analyzes CVs against job descriptions using AI, providing match scores, skill gap analysis, and personalized improvement recommendations.
+
+### What it does
+
+1. **Form Input** — User submits Job Description, CV (PDF), extra info, name, email
+2. **PDF Extraction** — Extracts text from uploaded resume
+3. **AI Analysis** — Gemini compares CV against job requirements and returns:
+   - 🎯 Match Score (0-100%)
+   - ✅ Strong Points
+   - ⚠️ Missing Skills
+   - 💡 Improvement Tips
+4. **HTML Formatting** — Converts Markdown response to clean HTML
+5. **Email Delivery** — Sends analysis report to user
+6. **Confirmation** — Displays results on screen
+
+### Problem it solves
+
+Helps job seekers understand how well their CV matches specific positions and get actionable advice for improvement — like having a personal career coach available 24/7.
+
+### Tech Stack
+
+- n8n, Google Gemini, Gmail API
+
+### Trigger
+
+Form submission (public URL available for users).
+
+![Resume Analyzer](job_ad_analyzer.png)
+
+---
+
 ## License
 
 MIT License
